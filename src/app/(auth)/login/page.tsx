@@ -1,28 +1,60 @@
 "use client";
 
 import { useState } from "react";
+import { z } from "zod/v4";
 import { createClient } from "@/lib/supabase/client";
+import { signUpSchema } from "@/lib/validators/agent";
+
+type FieldErrors = Partial<Record<string, string[]>>;
 
 export default function LoginPage() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [mode, setMode] = useState<"signin" | "signup">("signin");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setFieldErrors({});
 
     const supabase = createClient();
 
     if (mode === "signup") {
-      const { error } = await supabase.auth.signUp({
+      const result = signUpSchema.safeParse({
+        first_name: firstName,
+        last_name: lastName,
+        phone,
         email,
         password,
+        confirm_password: confirmPassword,
+      });
+
+      if (!result.success) {
+        setFieldErrors(z.flattenError(result.error).fieldErrors);
+        return;
+      }
+
+      setLoading(true);
+
+      const { first_name, last_name, phone: trimmedPhone } = result.data;
+
+      const { error } = await supabase.auth.signUp({
+        email: result.data.email,
+        password: result.data.password,
         options: {
-          data: { full_name: email.split("@")[0] },
+          data: {
+            first_name,
+            last_name,
+            phone: trimmedPhone,
+            full_name: `${first_name} ${last_name}`,
+          },
         },
       });
 
@@ -34,8 +66,8 @@ export default function LoginPage() {
 
       // Auto sign-in after signup
       const { error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: result.data.email,
+        password: result.data.password,
       });
 
       if (signInError) {
@@ -44,6 +76,8 @@ export default function LoginPage() {
         return;
       }
     } else {
+      setLoading(true);
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -73,6 +107,9 @@ export default function LoginPage() {
           id: user.id,
           full_name:
             user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Agent",
+          first_name: user.user_metadata?.first_name ?? null,
+          last_name: user.user_metadata?.last_name ?? null,
+          phone: user.user_metadata?.phone ?? null,
           email: user.email!,
         });
       }
@@ -80,6 +117,12 @@ export default function LoginPage() {
 
     // Full page navigation to ensure cookies are sent with proper headers
     window.location.href = "/dashboard";
+  }
+
+  function switchMode(next: "signin" | "signup") {
+    setMode(next);
+    setError(null);
+    setFieldErrors({});
   }
 
   return (
@@ -94,7 +137,83 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {mode === "signup" && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="first_name"
+                    className="block text-sm font-medium text-foreground"
+                  >
+                    First name
+                  </label>
+                  <input
+                    id="first_name"
+                    type="text"
+                    autoComplete="given-name"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    placeholder="Jane"
+                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  {fieldErrors.first_name && (
+                    <p className="text-sm text-destructive">
+                      {fieldErrors.first_name[0]}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="last_name"
+                    className="block text-sm font-medium text-foreground"
+                  >
+                    Last name
+                  </label>
+                  <input
+                    id="last_name"
+                    type="text"
+                    autoComplete="family-name"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    placeholder="Smith"
+                    className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                  />
+                  {fieldErrors.last_name && (
+                    <p className="text-sm text-destructive">
+                      {fieldErrors.last_name[0]}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-foreground"
+                >
+                  Phone number
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  placeholder="(555) 123-4567"
+                  className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+                />
+                {fieldErrors.phone && (
+                  <p className="text-sm text-destructive">{fieldErrors.phone[0]}</p>
+                )}
+              </div>
+            </>
+          )}
+
           <div>
             <label
               htmlFor="email"
@@ -105,12 +224,16 @@ export default function LoginPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
               placeholder="agent@example.com"
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
+            {fieldErrors.email && (
+              <p className="text-sm text-destructive">{fieldErrors.email[0]}</p>
+            )}
           </div>
 
           <div>
@@ -123,14 +246,47 @@ export default function LoginPage() {
             <input
               id="password"
               type="password"
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              minLength={6}
-              placeholder="At least 6 characters"
+              placeholder={
+                mode === "signup"
+                  ? "8+ characters, letters and numbers"
+                  : "Your password"
+              }
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
+            {fieldErrors.password && (
+              <p className="text-sm text-destructive">{fieldErrors.password[0]}</p>
+            )}
           </div>
+
+          {mode === "signup" && (
+            <div>
+              <label
+                htmlFor="confirm_password"
+                className="block text-sm font-medium text-foreground"
+              >
+                Confirm password
+              </label>
+              <input
+                id="confirm_password"
+                type="password"
+                autoComplete="new-password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                required
+                placeholder="Re-enter your password"
+                className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              {fieldErrors.confirm_password && (
+                <p className="text-sm text-destructive">
+                  {fieldErrors.confirm_password[0]}
+                </p>
+              )}
+            </div>
+          )}
 
           {error && <p className="text-sm text-destructive">{error}</p>}
 
@@ -153,10 +309,7 @@ export default function LoginPage() {
               Don&apos;t have an account?{" "}
               <button
                 type="button"
-                onClick={() => {
-                  setMode("signup");
-                  setError(null);
-                }}
+                onClick={() => switchMode("signup")}
                 className="text-primary hover:underline"
               >
                 Sign up
@@ -167,10 +320,7 @@ export default function LoginPage() {
               Already have an account?{" "}
               <button
                 type="button"
-                onClick={() => {
-                  setMode("signin");
-                  setError(null);
-                }}
+                onClick={() => switchMode("signin")}
                 className="text-primary hover:underline"
               >
                 Sign in

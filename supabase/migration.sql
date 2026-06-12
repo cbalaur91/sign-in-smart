@@ -144,3 +144,41 @@ alter publication supabase_realtime add table public.visitors;
 -- Note: Create a public bucket named "property-photos" in Supabase Dashboard > Storage
 -- Or run this if using the SQL editor with storage admin access:
 -- insert into storage.buckets (id, name, public) values ('property-photos', 'property-photos', true);
+
+-- ============================================
+-- Sign-up flow: agent name columns + profile-creation trigger
+-- (applied via MCP migration: add_agent_name_columns_and_signup_trigger)
+-- ============================================
+alter table public.agents
+  add column if not exists first_name text,
+  add column if not exists last_name text;
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  insert into public.agents (id, full_name, first_name, last_name, phone, email)
+  values (
+    new.id,
+    coalesce(nullif(new.raw_user_meta_data->>'full_name', ''),
+             split_part(new.email, '@', 1), 'Agent'),
+    new.raw_user_meta_data->>'first_name',
+    new.raw_user_meta_data->>'last_name',
+    new.raw_user_meta_data->>'phone',
+    new.email
+  )
+  on conflict (id) do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function public.handle_new_user();
+
+-- Trigger-only function: not callable via the REST RPC endpoint
+revoke execute on function public.handle_new_user() from anon, authenticated, public;

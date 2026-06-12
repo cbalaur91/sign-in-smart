@@ -26,6 +26,9 @@ export async function GET(request: Request) {
           await supabase.from("agents").insert({
             id: user.id,
             full_name: user.user_metadata?.full_name ?? user.email?.split("@")[0] ?? "Agent",
+            first_name: user.user_metadata?.first_name ?? null,
+            last_name: user.user_metadata?.last_name ?? null,
+            phone: user.user_metadata?.phone ?? null,
             email: user.email!,
           });
         }

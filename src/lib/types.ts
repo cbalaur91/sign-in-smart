@@ -5,6 +5,8 @@ export type Database = {
         Row: {
           id: string;
           full_name: string;
+          first_name: string | null;
+          last_name: string | null;
           email: string;
           phone: string | null;
           brokerage: string | null;
@@ -16,6 +18,8 @@ export type Database = {
         Insert: {
           id: string;
           full_name: string;
+          first_name?: string | null;
+          last_name?: string | null;
           email: string;
           phone?: string | null;
           brokerage?: string | null;
@@ -27,6 +31,8 @@ export type Database = {
         Update: {
           id?: string;
           full_name?: string;
+          first_name?: string | null;
+          last_name?: string | null;
           email?: string;
           phone?: string | null;
           brokerage?: string | null;
