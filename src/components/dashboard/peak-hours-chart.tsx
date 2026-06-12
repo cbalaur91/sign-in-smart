@@ -1,19 +1,7 @@
 "use client";
 
 import type { Visitor } from "@/lib/types";
-
-function timeToMinutes(time: string): number {
-  const [h, m] = time.split(":").map(Number);
-  return h! * 60 + m!;
-}
-
-function formatBucketLabel(minutes: number): string {
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  const ampm = h >= 12 ? "PM" : "AM";
-  const h12 = h % 12 || 12;
-  return `${h12}:${m.toString().padStart(2, "0")} ${ampm}`;
-}
+import { buildTimeBuckets } from "@/lib/peak-hours";
 
 export function PeakHoursChart({
   visitors,
@@ -24,28 +12,11 @@ export function PeakHoursChart({
   startTime: string;
   endTime: string;
 }) {
-  const startMin = timeToMinutes(startTime);
-  const endMin = timeToMinutes(endTime);
-  const bucketSize = 30; // minutes
-
-  // Build buckets
-  const buckets: { label: string; count: number }[] = [];
-  for (let t = startMin; t < endMin; t += bucketSize) {
-    buckets.push({
-      label: formatBucketLabel(t),
-      count: 0,
-    });
-  }
-
-  // Assign visitors to buckets
-  for (const v of visitors) {
-    const d = new Date(v.signed_in_at);
-    const vMin = d.getHours() * 60 + d.getMinutes();
-    const bucketIdx = Math.floor((vMin - startMin) / bucketSize);
-    if (bucketIdx >= 0 && bucketIdx < buckets.length) {
-      buckets[bucketIdx]!.count++;
-    }
-  }
+  const buckets = buildTimeBuckets(
+    visitors.map((v) => v.signed_in_at),
+    startTime,
+    endTime,
+  );
 
   const maxCount = Math.max(...buckets.map((b) => b.count), 1);
 

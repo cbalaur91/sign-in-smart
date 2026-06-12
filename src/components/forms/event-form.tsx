@@ -14,6 +14,12 @@ const US_STATES = [
 export function EventForm({ event }: { event?: Event }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [followUpEnabled, setFollowUpEnabled] = useState(
+    event?.follow_up_enabled ?? true,
+  );
+  const [nudgeEnabled, setNudgeEnabled] = useState(
+    event?.nudge_enabled ?? true,
+  );
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -35,6 +41,8 @@ export function EventForm({ event }: { event?: Event }) {
       sqft: form.get("sqft") ? Number(form.get("sqft")) : undefined,
       price: form.get("price") ? Number(form.get("price")) : undefined,
       status: (form.get("status") as "draft" | "active" | "completed") ?? "draft",
+      follow_up_enabled: followUpEnabled,
+      nudge_enabled: followUpEnabled && nudgeEnabled,
     };
 
     const result = event
@@ -278,6 +286,50 @@ export function EventForm({ event }: { event?: Event }) {
             <option value="completed">Completed</option>
           </select>
         </div>
+      </div>
+
+      {/* Follow-up Emails */}
+      <div className="space-y-4">
+        <h3 className="text-lg font-medium">Follow-up Emails</h3>
+
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={followUpEnabled}
+            onChange={(e) => setFollowUpEnabled(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+          />
+          <span>
+            <span className="block text-sm font-medium">
+              Send thank-you email after the event
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              Every visitor gets a branded thank-you with the property details
+              and your contact card when the open house ends.
+            </span>
+          </span>
+        </label>
+
+        <label
+          className={`flex items-start gap-3 ${followUpEnabled ? "" : "opacity-50"}`}
+        >
+          <input
+            type="checkbox"
+            checked={followUpEnabled && nudgeEnabled}
+            disabled={!followUpEnabled}
+            onChange={(e) => setNudgeEnabled(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-input accent-primary"
+          />
+          <span>
+            <span className="block text-sm font-medium">
+              Send a follow-up nudge 3 days later
+            </span>
+            <span className="block text-xs text-muted-foreground">
+              A short &quot;still interested?&quot; email inviting visitors to
+              schedule a private showing.
+            </span>
+          </span>
+        </label>
       </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}

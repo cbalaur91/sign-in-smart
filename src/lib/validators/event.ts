@@ -14,6 +14,8 @@ export const eventSchema = z.object({
   sqft: z.coerce.number().int().min(0).optional(),
   price: z.coerce.number().min(0).optional(),
   status: z.enum(["draft", "active", "completed"]).default("draft"),
+  follow_up_enabled: z.boolean().default(true),
+  nudge_enabled: z.boolean().default(true),
 });
 
 export type EventFormData = z.infer<typeof eventSchema>;
