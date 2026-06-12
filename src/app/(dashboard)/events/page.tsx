@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatPrice, formatStatus } from "@/lib/utils";
+import { EventStatusAction } from "@/components/events/event-status-action";
 
 export default async function EventsPage() {
   const supabase = await createClient();
@@ -45,11 +46,16 @@ export default async function EventsPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {events.map((event) => (
-            <Link
+            <div
               key={event.id}
-              href={`/events/${event.id}`}
-              className="group rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
+              className="group relative rounded-lg border border-border bg-card p-5 transition-colors hover:border-primary/50"
             >
+              <Link
+                href={`/events/${event.id}`}
+                className="absolute inset-0 z-0"
+                aria-label={`View ${event.property_address}`}
+              />
+
               <div className="mb-3 flex items-start justify-between">
                 <span
                   className={`rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -78,13 +84,16 @@ export default async function EventsPage() {
                 {event.city}, {event.state} {event.zip}
               </p>
 
-              <div className="mt-3 flex items-center gap-4 text-xs text-muted-foreground">
-                <span>{formatDate(event.date)}</span>
-                {event.bedrooms && <span>{event.bedrooms} bed</span>}
-                {event.bathrooms && <span>{event.bathrooms} bath</span>}
-                {event.sqft && <span>{event.sqft.toLocaleString()} sqft</span>}
+              <div className="mt-3 flex items-end justify-between gap-2">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                  <span>{formatDate(event.date)}</span>
+                  {event.bedrooms && <span>{event.bedrooms} bed</span>}
+                  {event.bathrooms && <span>{event.bathrooms} bath</span>}
+                  {event.sqft && <span>{event.sqft.toLocaleString()} sqft</span>}
+                </div>
+                <EventStatusAction eventId={event.id} status={event.status} />
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

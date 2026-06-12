@@ -2,14 +2,8 @@
 
 import { useState } from "react";
 import { createEvent, updateEvent } from "@/lib/actions/events";
+import { US_STATES, type EventFormData } from "@/lib/validators/event";
 import type { Event } from "@/lib/types";
-
-const US_STATES = [
-  "AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA",
-  "KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ",
-  "NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT",
-  "VA","WA","WV","WI","WY","DC",
-];
 
 export function EventForm({ event }: { event?: Event }) {
   const [loading, setLoading] = useState(false);
@@ -30,7 +24,7 @@ export function EventForm({ event }: { event?: Event }) {
     const data = {
       property_address: form.get("property_address") as string,
       city: form.get("city") as string,
-      state: form.get("state") as string,
+      state: form.get("state") as EventFormData["state"],
       zip: form.get("zip") as string,
       date: form.get("date") as string,
       start_time: form.get("start_time") as string,
@@ -42,7 +36,8 @@ export function EventForm({ event }: { event?: Event }) {
       bathrooms: form.get("bathrooms") ? Number(form.get("bathrooms")) : undefined,
       sqft: form.get("sqft") ? Number(form.get("sqft")) : undefined,
       price: form.get("price") ? Number(form.get("price")) : undefined,
-      status: (form.get("status") as "draft" | "active" | "completed") ?? "draft",
+      // No status field on create — new events always start as draft
+      status: (form.get("status") as EventFormData["status"]) ?? "draft",
       follow_up_enabled: followUpEnabled,
       nudge_enabled: followUpEnabled && nudgeEnabled,
     };
@@ -80,7 +75,7 @@ export function EventForm({ event }: { event?: Event }) {
       return;
     }
 
-    if (result?.error) {
+    if (result && "error" in result && result.error) {
       setError(result.error);
       setLoading(false);
     }
@@ -102,6 +97,8 @@ export function EventForm({ event }: { event?: Event }) {
             name="property_address"
             type="text"
             required
+            minLength={5}
+            maxLength={200}
             defaultValue={event?.property_address}
             placeholder="123 Main Street"
             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
@@ -118,6 +115,8 @@ export function EventForm({ event }: { event?: Event }) {
               name="city"
               type="text"
               required
+              minLength={2}
+              maxLength={100}
               defaultValue={event?.city}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -150,6 +149,10 @@ export function EventForm({ event }: { event?: Event }) {
               name="zip"
               type="text"
               required
+              inputMode="numeric"
+              maxLength={10}
+              pattern="\d{5}(-\d{4})?"
+              title="Enter a valid ZIP code (e.g. 60601)"
               defaultValue={event?.zip}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -166,6 +169,7 @@ export function EventForm({ event }: { event?: Event }) {
               name="bedrooms"
               type="number"
               min="0"
+              max="50"
               defaultValue={event?.bedrooms ?? ""}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -179,6 +183,7 @@ export function EventForm({ event }: { event?: Event }) {
               name="bathrooms"
               type="number"
               min="0"
+              max="50"
               step="0.5"
               defaultValue={event?.bathrooms ?? ""}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
@@ -193,6 +198,7 @@ export function EventForm({ event }: { event?: Event }) {
               name="sqft"
               type="number"
               min="0"
+              max="1000000"
               defaultValue={event?.sqft ?? ""}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -206,6 +212,7 @@ export function EventForm({ event }: { event?: Event }) {
               name="price"
               type="number"
               min="0"
+              max="1000000000"
               defaultValue={event?.price ?? ""}
               className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
             />
@@ -220,6 +227,7 @@ export function EventForm({ event }: { event?: Event }) {
             id="description"
             name="description"
             rows={4}
+            maxLength={5000}
             defaultValue={event?.description ?? ""}
             placeholder="Tell visitors about this property..."
             className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
@@ -273,21 +281,33 @@ export function EventForm({ event }: { event?: Event }) {
           </div>
         </div>
 
-        <div>
-          <label htmlFor="status" className="block text-sm font-medium">
-            Status
-          </label>
-          <select
-            id="status"
-            name="status"
-            defaultValue={event?.status ?? "draft"}
-            className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
-          >
-            <option value="draft">Draft</option>
-            <option value="active">Active</option>
-            <option value="completed">Completed</option>
-          </select>
-        </div>
+        {event ? (
+          <div>
+            <label htmlFor="status" className="block text-sm font-medium">
+              Status
+            </label>
+            <select
+              id="status"
+              name="status"
+              defaultValue={event.status}
+              className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:border-ring focus:outline-none focus:ring-1 focus:ring-ring"
+            >
+              <option value="draft">Draft</option>
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              {event.status === "pending_payment" && (
+                <option value="pending_payment">Pending Payment</option>
+              )}
+            </select>
+          </div>
+        ) : (
+          <div className="rounded-md border border-border bg-muted/50 px-3 py-2.5 text-sm text-muted-foreground">
+            New open houses start as{" "}
+            <span className="font-medium text-foreground">Draft</span>. When
+            you&apos;re ready to go live, activate it from your Open Houses
+            list — activation uses one credit.
+          </div>
+        )}
       </div>
 
       {/* Follow-up Emails */}
