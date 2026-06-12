@@ -30,9 +30,11 @@ const ACTIONS: Record<
 export function EventStatusAction({
   eventId,
   status,
+  size = "sm",
 }: {
   eventId: string;
   status: string;
+  size?: "sm" | "md";
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -114,7 +116,11 @@ export function EventStatusAction({
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className={`rounded-md border px-2.5 py-1 text-xs font-medium transition-colors disabled:opacity-50 ${action.className}`}
+        className={`rounded-md border font-medium transition-colors disabled:opacity-50 ${
+          size === "md"
+            ? "w-full px-4 py-2.5 text-center text-sm"
+            : "px-2.5 py-1 text-xs"
+        } ${action.className}`}
       >
         {loading ? action.busy : action.label}
       </button>

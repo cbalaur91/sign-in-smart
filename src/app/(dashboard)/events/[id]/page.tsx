@@ -12,6 +12,7 @@ import { PeakHoursChart } from "@/components/dashboard/peak-hours-chart";
 import { PaymentBanner } from "@/components/dashboard/payment-banner";
 import { SellerReportCard } from "@/components/dashboard/seller-report-card";
 import { FollowUpStatusCard } from "@/components/dashboard/follow-up-status-card";
+import { EventStatusAction } from "@/components/events/event-status-action";
 
 export default async function EventDetailPage({
   params,
@@ -117,6 +118,11 @@ export default async function EventDetailPage({
           )}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:flex">
+          <EventStatusAction
+            eventId={event.id}
+            status={displayStatus}
+            size="md"
+          />
           <DeleteEventButton eventId={event.id} />
           <Link
             href={`/events/${event.id}/edit`}
