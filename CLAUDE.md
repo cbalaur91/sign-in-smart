@@ -38,7 +38,7 @@
 
 ## Task Management
 
-1. **Plan First**: Write plan to `tasks/todo.md` with checkable items
+1. **Plan First**: Write plan to `tasks/todo.md` with checkable items, each paired with how it'll be verified — `1. [step] → verify: [check]`. Strong success criteria let you loop independently; weak ones ("make it work") force constant clarification.
 2. **Verify Plan**: Check in before starting implementation
 3. **Track Progress**: Mark items complete as you go
 4. **Explain Changes**: High-level summary at each step
@@ -49,6 +49,6 @@
 
 - **Simplicity First**: Make every change as simple as possible. Impact minimal code.
 - **No Laziness**: Find root causes. No temporary fixes. Senior developer standards.
-- **Minimat Impact**: Changes should only touch what's necessary. Avoid introducing bugs.
+- **Minimal Impact (Surgical Changes)**: Changes should only touch what's necessary; avoid introducing bugs. Match the existing style even if you'd do it differently, and don't refactor or "improve" code that isn't broken. Don't delete pre-existing dead code — flag it instead; only remove imports/variables/functions that *your* changes orphaned. Every changed line should trace directly to the request.
 - **Skills Strategy**: Always use frontend designer skill when we are making changes to UI and UX
 - **Backend Strategy**: Always use supabase mcp server when working on supabase. If that fails, try cli, if that fails, just provide me with the migration file. 
