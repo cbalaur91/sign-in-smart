@@ -10,6 +10,8 @@ import { DeleteEventButton } from "@/components/dashboard/delete-event-button";
 import { CsvExportButton } from "@/components/dashboard/csv-export-button";
 import { PeakHoursChart } from "@/components/dashboard/peak-hours-chart";
 import { PaymentBanner } from "@/components/dashboard/payment-banner";
+import { SellerReportCard } from "@/components/dashboard/seller-report-card";
+import { FollowUpStatusCard } from "@/components/dashboard/follow-up-status-card";
 
 export default async function EventDetailPage({
   params,
@@ -53,6 +55,11 @@ export default async function EventDetailPage({
     .select("event_type")
     .eq("event_id", id);
 
+  const { data: emailLogs } =
+    event.status === "completed"
+      ? await supabase.from("email_log").select("*").eq("event_id", id)
+      : { data: null };
+
   const pageViews =
     analytics?.filter((a) => a.event_type === "page_view").length ?? 0;
   const signIns =
@@ -67,6 +74,7 @@ export default async function EventDetailPage({
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const eventUrl = `${appUrl}/oh/${event.slug}`;
+  const reportUrl = `${appUrl}/report/${event.report_token}`;
 
   // If payment just succeeded but webhook hasn't updated the DB yet, treat as active
   const displayStatus =
@@ -147,6 +155,11 @@ export default async function EventDetailPage({
         ) : null;
       })()}
 
+      {/* Follow-up email status */}
+      {event.status === "completed" && (
+        <FollowUpStatusCard event={event} emailLogs={emailLogs ?? []} />
+      )}
+
       {/* Stats */}
       <StatsCards
         pageViews={pageViews}
@@ -165,6 +178,13 @@ export default async function EventDetailPage({
           <PhotoUpload eventId={event.id} photos={event.photos} />
         </div>
       </div>
+
+      {/* Seller Report */}
+      {(displayStatus === "active" || displayStatus === "completed") && (
+        <div className="mb-8">
+          <SellerReportCard eventId={event.id} reportUrl={reportUrl} />
+        </div>
+      )}
 
       {/* Peak Hours */}
       {(visitors?.length ?? 0) >= 3 && (

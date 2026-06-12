@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
   const { error: updateError } = await supabase
     .from("events")
-    .update({ status: "completed" })
+    .update({ status: "completed", completed_at: now })
     .in("id", expiredIds);
 
   if (updateError) {

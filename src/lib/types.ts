@@ -55,6 +55,10 @@ export type Database = {
           sqft: number | null;
           price: number | null;
           status: "draft" | "active" | "completed" | "pending_payment";
+          follow_up_enabled: boolean;
+          nudge_enabled: boolean;
+          completed_at: string | null;
+          report_token: string;
           created_at: string;
         };
         Insert: {
@@ -75,6 +79,10 @@ export type Database = {
           sqft?: number | null;
           price?: number | null;
           status?: "draft" | "active" | "completed" | "pending_payment";
+          follow_up_enabled?: boolean;
+          nudge_enabled?: boolean;
+          completed_at?: string | null;
+          report_token?: string;
           created_at?: string;
         };
         Update: {
@@ -94,6 +102,10 @@ export type Database = {
           sqft?: number | null;
           price?: number | null;
           status?: "draft" | "active" | "completed" | "pending_payment";
+          follow_up_enabled?: boolean;
+          nudge_enabled?: boolean;
+          completed_at?: string | null;
+          report_token?: string;
         };
         Relationships: [
           {
@@ -114,6 +126,7 @@ export type Database = {
           phone: string;
           visitor_type: "buyer" | "neighbor" | "investor" | "other";
           notes: string | null;
+          email_opt_out: boolean;
           signed_in_at: string;
         };
         Insert: {
@@ -124,6 +137,7 @@ export type Database = {
           phone: string;
           visitor_type: "buyer" | "neighbor" | "investor" | "other";
           notes?: string | null;
+          email_opt_out?: boolean;
           signed_in_at?: string;
         };
         Update: {
@@ -133,6 +147,7 @@ export type Database = {
           phone?: string;
           visitor_type?: "buyer" | "neighbor" | "investor" | "other";
           notes?: string | null;
+          email_opt_out?: boolean;
         };
         Relationships: [
           {
@@ -176,6 +191,49 @@ export type Database = {
           },
           {
             foreignKeyName: "event_analytics_visitor_id_fkey";
+            columns: ["visitor_id"];
+            isOneToOne: false;
+            referencedRelation: "visitors";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      email_log: {
+        Row: {
+          id: string;
+          event_id: string;
+          visitor_id: string;
+          email_type: "thank_you" | "nudge";
+          status: "sent" | "failed";
+          attempts: number;
+          resend_id: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          visitor_id: string;
+          email_type: "thank_you" | "nudge";
+          status?: "sent" | "failed";
+          attempts?: number;
+          resend_id?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          status?: "sent" | "failed";
+          attempts?: number;
+          resend_id?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "email_log_event_id_fkey";
+            columns: ["event_id"];
+            isOneToOne: false;
+            referencedRelation: "events";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "email_log_visitor_id_fkey";
             columns: ["visitor_id"];
             isOneToOne: false;
             referencedRelation: "visitors";
@@ -250,3 +308,4 @@ export type Visitor = Database["public"]["Tables"]["visitors"]["Row"];
 export type EventAnalytic =
   Database["public"]["Tables"]["event_analytics"]["Row"];
 export type Payment = Database["public"]["Tables"]["payments"]["Row"];
+export type EmailLog = Database["public"]["Tables"]["email_log"]["Row"];

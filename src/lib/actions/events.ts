@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { eventSchema, type EventFormData } from "@/lib/validators/event";
 import { generateSlug } from "@/lib/utils";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -44,6 +45,8 @@ export async function createEvent(formData: EventFormData) {
       price: parsed.data.price ?? null,
       status: "draft",
       photos: [],
+      follow_up_enabled: parsed.data.follow_up_enabled,
+      nudge_enabled: parsed.data.nudge_enabled,
     })
     .select("id")
     .single();
@@ -150,6 +153,8 @@ export async function updateEvent(eventId: string, formData: EventFormData) {
       sqft: parsed.data.sqft ?? null,
       price: parsed.data.price ?? null,
       status: parsed.data.status,
+      follow_up_enabled: parsed.data.follow_up_enabled,
+      nudge_enabled: parsed.data.nudge_enabled,
     })
     .eq("id", eventId)
     .eq("agent_id", user.id);
@@ -185,6 +190,32 @@ export async function deleteEvent(eventId: string) {
   }
 
   redirect("/events");
+}
+
+export async function resetReportToken(eventId: string) {
+  if (!UUID_RE.test(eventId)) return { error: "Invalid event ID" };
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { error: "Not authenticated" };
+  }
+
+  const { error } = await supabase
+    .from("events")
+    .update({ report_token: crypto.randomUUID() })
+    .eq("id", eventId)
+    .eq("agent_id", user.id);
+
+  if (error) {
+    console.error("resetReportToken error:", error.message);
+    return { error: "Something went wrong. Please try again." };
+  }
+
+  revalidatePath(`/events/${eventId}`);
+  return { success: true };
 }
 
 export async function updateEventPhotos(eventId: string, photos: string[]) {
