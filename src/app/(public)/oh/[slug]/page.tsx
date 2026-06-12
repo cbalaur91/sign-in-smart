@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { formatDate, formatTime, formatPrice } from "@/lib/utils";
 import { VisitorSignInForm } from "@/components/forms/sign-in-form";
 import { PropertyHero } from "@/components/property/property-hero";
+import { AgentEmail } from "@/components/property/agent-email";
 import Image from "next/image";
 
 export async function generateMetadata({
@@ -163,6 +164,11 @@ export default async function OpenHousePage({
                 </a>
               )}
             </div>
+            {agent.email && (
+              <div className="mt-3">
+                <AgentEmail email={agent.email} />
+              </div>
+            )}
           </div>
         )}
       </div>
