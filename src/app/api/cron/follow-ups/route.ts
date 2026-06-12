@@ -209,8 +209,11 @@ export async function GET(request: Request) {
   const resend = createResendClient();
 
   try {
-    const thankYous = await processEmailType(supabase, resend, "thank_you");
+    // Nudges are evaluated before thank-yous so a visitor whose thank-you
+    // just recovered from a failed send isn't nudged in the same run —
+    // their nudge goes out on a later run instead.
     const nudges = await processEmailType(supabase, resend, "nudge");
+    const thankYous = await processEmailType(supabase, resend, "thank_you");
 
     return NextResponse.json({
       thankYousSent: thankYous.sent,
