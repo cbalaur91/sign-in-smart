@@ -1,0 +1,27 @@
+name: Scheduled crons
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  run-crons:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Auto-complete events
+        run: |
+          code=$(curl -s -o /tmp/auto-complete.out -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://sign-in-smart.vercel.app/api/cron/auto-complete)
+          cat /tmp/auto-complete.out
+          [ "$code" = "200" ] || { echo "auto-complete failed with HTTP $code"; exit 1; }
+
+      - name: Visitor follow-ups
+        if: always()
+        run: |
+          code=$(curl -s -o /tmp/follow-ups.out -w "%{http_code}" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}" \
+            https://sign-in-smart.vercel.app/api/cron/follow-ups)
+          cat /tmp/follow-ups.out
+          [ "$code" = "200" ] || { echo "follow-ups failed with HTTP $code"; exit 1; }
