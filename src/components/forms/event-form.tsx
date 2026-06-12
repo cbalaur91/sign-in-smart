@@ -35,6 +35,8 @@ export function EventForm({ event }: { event?: Event }) {
       date: form.get("date") as string,
       start_time: form.get("start_time") as string,
       end_time: form.get("end_time") as string,
+      timezone:
+        event?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone,
       description: (form.get("description") as string) || undefined,
       bedrooms: form.get("bedrooms") ? Number(form.get("bedrooms")) : undefined,
       bathrooms: form.get("bathrooms") ? Number(form.get("bathrooms")) : undefined,

@@ -1,5 +1,14 @@
 import { z } from "zod/v4";
 
+function isValidTimeZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const eventSchema = z.object({
   property_address: z.string().min(5, "Address is required").max(200),
   city: z.string().min(2, "City is required").max(100),
@@ -8,6 +17,11 @@ export const eventSchema = z.object({
   date: z.string().min(1, "Date is required"),
   start_time: z.string().min(1, "Start time is required"),
   end_time: z.string().min(1, "End time is required"),
+  timezone: z
+    .string()
+    .max(64)
+    .refine(isValidTimeZone, "Invalid timezone")
+    .default("America/Chicago"),
   description: z.string().max(5000).optional(),
   bedrooms: z.coerce.number().int().min(0).optional(),
   bathrooms: z.coerce.number().min(0).optional(),

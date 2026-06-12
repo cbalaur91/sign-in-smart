@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { formatDate, formatTime, formatPrice, formatStatus } from "@/lib/utils";
+import { formatDate, formatTime, formatPrice, formatStatus, zonedDateTimeToUtc } from "@/lib/utils";
 import { VisitorTable } from "@/components/dashboard/visitor-table";
 import { QRCodeDisplay } from "@/components/property/qr-code-display";
 import { PhotoUpload } from "@/components/forms/photo-upload";
@@ -147,7 +147,7 @@ export default async function EventDetailPage({
 
       {/* Event ended banner */}
       {displayStatus === "active" && (() => {
-        const endDateTime = new Date(`${event.date}T${event.end_time}`);
+        const endDateTime = zonedDateTimeToUtc(event.date, event.end_time, event.timezone);
         return endDateTime < new Date() ? (
           <div className="mb-6 rounded-lg border border-yellow-500/30 bg-yellow-500/5 px-4 py-3 text-sm text-yellow-500">
             This event has ended. It will be marked as completed automatically.

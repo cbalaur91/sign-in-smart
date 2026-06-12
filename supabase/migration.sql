@@ -182,3 +182,10 @@ create trigger on_auth_user_created
 
 -- Trigger-only function: not callable via the REST RPC endpoint
 revoke execute on function public.handle_new_user() from anon, authenticated, public;
+
+-- ============================================
+-- Per-event timezone (applied via MCP migration: add_event_timezone)
+-- date/start_time/end_time are wall-clock values in this IANA zone
+-- ============================================
+alter table public.events
+  add column if not exists timezone text not null default 'America/Chicago';

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { zonedDateTimeToUtc } from "@/lib/utils";
 
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
@@ -13,7 +14,7 @@ export async function GET(request: Request) {
   // Find active events where date + end_time is in the past
   const { data: activeEvents, error: fetchError } = await supabase
     .from("events")
-    .select("id, date, end_time")
+    .select("id, date, end_time, timezone")
     .eq("status", "active");
 
   if (fetchError) {
@@ -23,7 +24,7 @@ export async function GET(request: Request) {
 
   const expiredIds = (activeEvents ?? [])
     .filter((e) => {
-      const endDateTime = new Date(`${e.date}T${e.end_time}`);
+      const endDateTime = zonedDateTimeToUtc(e.date, e.end_time, e.timezone);
       return endDateTime < new Date(now);
     })
     .map((e) => e.id);

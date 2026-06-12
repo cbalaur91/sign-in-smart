@@ -54,6 +54,7 @@ export type Database = {
           date: string;
           start_time: string;
           end_time: string;
+          timezone: string;
           description: string | null;
           photos: string[];
           bedrooms: number | null;
@@ -78,6 +79,7 @@ export type Database = {
           date: string;
           start_time: string;
           end_time: string;
+          timezone?: string;
           description?: string | null;
           photos?: string[];
           bedrooms?: number | null;
@@ -101,6 +103,7 @@ export type Database = {
           date?: string;
           start_time?: string;
           end_time?: string;
+          timezone?: string;
           description?: string | null;
           photos?: string[];
           bedrooms?: number | null;
